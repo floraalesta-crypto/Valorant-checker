@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <title>ValoSync Pro Dashboard</title>
+    <style>
+        body { background-color: #0f1923; color: #ece8e1; }
+        .glass-card { background: rgba(23, 34, 45, 0.9); border: 1px solid #383e44; }
+        .valo-btn { background-color: #ff4655; transition: 0.3s; }
+        .valo-btn:hover { background-color: #ff5e6a; box-shadow: 0 0 20px rgba(255, 70, 85, 0.4); }
+    </style>
+</head>
+<body class="min-h-screen p-4 md:p-10">
+
+    <div class="max-w-6xl mx-auto">
+        <div class="flex flex-col md:flex-row justify-between items-center mb-10 gap-4">
+            <div class="flex items-center gap-4">
+                <div class="p-3 bg-[#ff4655] rounded-lg shadow-lg">
+                    <i class="fa-solid fa-crosshairs text-2xl"></i>
+                </div>
+                <h1 class="text-3xl font-black italic uppercase tracking-tighter">Valo<span class="text-[#ff4655]">Sync</span></h1>
+            </div>
+            <div class="px-4 py-2 bg-green-500/10 text-green-500 rounded border border-green-500/20 text-xs font-bold uppercase">System Live</div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <div class="space-y-6">
+                <div class="glass-card p-6 rounded-2xl shadow-2xl">
+                    <h2 class="text-[#ff4655] font-bold text-xs uppercase mb-4 tracking-widest italic">Accounts (user:pass)</h2>
+                    <textarea id="inpAcc" class="w-full h-40 bg-[#0a121a] border border-[#383e44] rounded-lg p-4 text-sm outline-none mb-4 focus:border-[#ff4655]" placeholder="user:pass"></textarea>
+                    
+                    <h2 class="text-[#ff4655] font-bold text-xs uppercase mb-4 tracking-widest italic">Proxies (http://ip:port)</h2>
+                    <textarea id="inpProx" class="w-full h-32 bg-[#0a121a] border border-[#383e44] rounded-lg p-4 text-sm outline-none mb-4 focus:border-[#ff4655]" placeholder="http://user:pass@ip:port"></textarea>
+                    
+                    <button onclick="startScan()" id="btnStart" class="valo-btn w-full py-4 rounded-xl font-black uppercase text-sm tracking-widest active:scale-95">Mulai Pengecekan</button>
+                </div>
+            </div>
+
+            <div class="lg:col-span-2">
+                <div class="glass-card rounded-2xl shadow-2xl overflow-hidden">
+                    <table class="w-full">
+                        <thead class="bg-[#1a2531] text-[#7e7e7e] text-[10px] uppercase font-bold tracking-widest">
+                            <tr>
+                                <th class="p-4 text-left">Akun</th>
+                                <th class="p-4 text-left">Info/Status</th>
+                                <th class="p-4 text-right">Hasil</th>
+                            </tr>
+                        </thead>
+                        <tbody id="resultTable" class="divide-y divide-[#1a2531]"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        async function startScan() {
+            const accs = document.getElementById('inpAcc').value.split('\n').filter(x => x);
+            const pxs = document.getElementById('inpProx').value.split('\n').filter(x => x);
+            const table = document.getElementById('resultTable');
+            
+            if(accs.length === 0 || pxs.length === 0) return alert('Isi akun dan proxy!');
+
+            for(let combo of accs) {
+                const proxy = pxs[Math.floor(Math.random() * pxs.length)];
+                const row = table.insertRow(0);
+                row.className = "hover:bg-white/5 transition";
+                row.innerHTML = `<td class="p-4 text-sm font-mono text-slate-400">${combo}</td><td class="p-4 text-yellow-500 italic text-xs animate-pulse">Scanning...</td><td class="p-4 text-right">---</td>`;
+
+                try {
+                    const res = await fetch('/api/scan', {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({ combo, proxy })
+                    });
+                    const data = await res.json();
+
+                    if(data.status === 'Success') {
+                        row.innerHTML = `
+                            <td class="p-4 font-bold text-green-400 text-sm">${data.user}</td>
+                            <td class="p-4">
+                                <div class="text-[10px] text-slate-500 uppercase font-bold">${data.region} | Level ${data.level}</div>
+                                <div class="text-white font-black">${data.skinCount} SKINS</div>
+                            </td>
+                            <td class="p-4 text-right text-green-500"><i class="fa-solid fa-check-double text-xl"></i></td>
+                        `;
+                    } else {
+                        row.cells[1].innerHTML = `<span class="text-red-500 font-bold uppercase text-xs">${data.status}</span>`;
+                        row.cells[2].innerHTML = '<i class="fa-solid fa-circle-xmark text-red-500 text-xl"></i>';
+                    }
+                } catch (e) {
+                    row.cells[1].innerText = "Server Error";
+                }
+            }
+        }
+    </script>
+</body>
+                                                </html>
