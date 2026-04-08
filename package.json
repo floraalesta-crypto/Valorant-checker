@@ -1,11 +1,15 @@
 {
   "name": "valosync-ultimate",
   "version": "1.5.0",
-  "description": "Professional Riot Mail Searcher with Email Preview",
+  "description": "Professional Riot Mail Access Searcher",
   "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
   "dependencies": {
     "express": "^4.18.2",
     "imapflow": "^1.0.145",
-    "mailparser": "^3.6.5"
+    "mailparser": "^3.6.5",
+    "https-proxy-agent": "^7.0.2"
   }
 }
