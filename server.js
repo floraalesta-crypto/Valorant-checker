@@ -1,62 +1,64 @@
 const express = require('express');
-const { HttpsProxyAgent } = require('https-proxy-agent');
 const axios = require('axios');
-const path = require('path');
-
+const { HttpsProxyAgent } = require('https-proxy-agent');
 const app = express();
+
 app.use(express.json());
-app.use(express.static('public')); // Mengakses folder frontend
+app.use(express.static('public'));
 
-// Fungsi kerangka untuk mengecek 1 akun ke Riot Games
-async function checkAccount(combo, proxy) {
-    const [username, password] = combo.split(':');
-    
-    // Logika Agent Proxy
-    let axiosConfig = {};
-    if (proxy) {
-        const proxyUrl = proxy.startsWith('http') ? proxy : `http://${proxy}`;
-        axiosConfig.httpsAgent = new HttpsProxyAgent(proxyUrl);
-    }
-
+// Fungsi untuk mengambil data inventory menggunakan Token
+async function getInventory(accessToken, entitlementToken, region, puuid, agent) {
     try {
-        /* * DI SINI ADALAH TEMPAT UNTUK API RIOT GAMES.
-         * Alur standarnya:
-         * 1. POST ke auth.riotgames.com (Dapat Token)
-         * 2. GET ke entitlements.auth.riotgames.com (Dapat Entitlement)
-         * 3. GET ke pd.{region}.a.pvp.net (Dapat List Skin)
-         */
+        // 1. Cek Skin
+        const skinRes = await axios.get(`https://pd.${region}.a.pvp.net/store/v1/entitlements/${puuid}/ItemEntitlements`, {
+            headers: {
+                'Authorization': `Bearer ${accessToken}`,
+                'X-Riot-Entitlements-JWT': entitlementToken
+            },
+            httpsAgent: agent
+        });
 
-        // Simulasi proses pengecekan (Hapus ini jika API asli sudah dimasukkan)
-        await new Promise(res => setTimeout(res, 1500)); 
-        const isHit = Math.random() > 0.5;
+        // 2. Cek Balance (VP/RP)
+        const walletRes = await axios.get(`https://pd.${region}.a.pvp.net/store/v1/wallet/${puuid}`, {
+            headers: {
+                'Authorization': `Bearer ${accessToken}`,
+                'X-Riot-Entitlements-JWT': entitlementToken
+            },
+            httpsAgent: agent
+        });
 
-        if (isHit) {
-            return {
-                status: 'VALID',
-                combo: combo,
-                region: ['AP', 'NA', 'EU'][Math.floor(Math.random() * 3)],
-                level: Math.floor(Math.random() * 200) + 1,
-                skins: Math.floor(Math.random() * 80),
-                vp: Math.floor(Math.random() * 2000),
-                rp: Math.floor(Math.random() * 300)
-            };
-        } else {
-            return { status: 'INVALID', combo: combo };
-        }
-
-    } catch (error) {
-        return { status: 'ERROR', combo: combo, error: error.message };
+        return {
+            skins: skinRes.data.Entitlements.filter(item => item.TypeID === "e7c63390-4e83-f9a8-b2a3-74517cc9e205").length,
+            vp: walletRes.data.Balances["85ad13f7-3d1b-4112-bf97-4c8c8ef24b28"] || 0,
+            rp: walletRes.data.Balances["e5912443-0335-42a1-a5c6-6a57850a1161"] || 0
+        };
+    } catch (e) {
+        return { skins: 0, vp: 0, rp: 0 };
     }
 }
 
-// Endpoint untuk menerima request dari Frontend
 app.post('/api/check', async (req, res) => {
-    const { combo, proxy } = req.body;
-    const result = await checkAccount(combo, proxy);
-    res.json(result);
+    const { token, proxy } = req.body; // Kita kirim token hasil "jembatan"
+    const agent = proxy ? new HttpsProxyAgent(proxy) : null;
+
+    try {
+        // Contoh alur jika token sudah valid
+        // Anda butuh Entitlement Token juga (biasanya didapat bersama access_token)
+        
+        // Simulasi Response Berhasil
+        res.json({
+            status: 'VALID',
+            region: 'AP',
+            level: 85, // Bisa didapat dari /account-lv/v1/
+            skins: 42,
+            vp: 1500,
+            rp: 45,
+            combo: "Token-Auth-Session"
+        });
+    } catch (error) {
+        res.json({ status: 'ERROR', message: error.message });
+    }
 });
 
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-    console.log(`[POLYGON CLONE] Server berjalan di port ${PORT}`);
-});
+const PORT = process.env.PORT || 8080;
+app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
