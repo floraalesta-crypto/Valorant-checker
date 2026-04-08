@@ -2,54 +2,66 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>VALOSYNC | Enterprise Mail Access</title>
+    <title>VALOSYNC | Enterprise Mail Searcher</title>
     <link rel="stylesheet" href="style.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
     <div class="sidebar">
         <div class="logo"><i class="fa-solid fa-bolt"></i> VALO<span>SYNC</span></div>
-        <div class="nav-item active"><i class="fa-solid fa-magnifying-glass"></i> Deep Searcher</div>
-        <div class="nav-item"><i class="fa-solid fa-file-export"></i> Auto Export</div>
+        <nav>
+            <div class="nav-item active"><i class="fa-solid fa-magnifying-glass"></i> Deep Searcher</div>
+            <div class="nav-item" id="export-btn"><i class="fa-solid fa-file-export"></i> Export Hits</div>
+        </nav>
+        <div class="sidebar-footer"><p>v1.5.0 Stable</p></div>
     </div>
 
     <div class="container">
         <header>
-            <div class="header-info"><span id="cpm">CPM: 0</span> | <span id="timer">00:00</span></div>
-            <div class="actions">
-                <button id="start-btn" class="btn-primary">START SESSION</button>
-                <button id="stop-btn" class="btn-danger" disabled>STOP</button>
-            </div>
+            <div class="header-info"><span id="cpm-display">CPM: 0</span></div>
+            <div class="user-status"><span class="status-dot"></span> System Online</div>
         </header>
 
         <div class="stats-grid">
             <div class="stat-card"><h5>Checked</h5><p id="s-checked">0</p></div>
-            <div class="stat-card hit"><h5>Hits</h5><p id="s-hit">0</p></div>
+            <div class="stat-card hit"><h5>Riot Hits</h5><p id="s-hit">0</p></div>
             <div class="stat-card bad"><h5>Invalid</h5><p id="s-bad">0</p></div>
             <div class="stat-card locked"><h5>Locked</h5><p id="s-locked">0</p></div>
         </div>
 
         <div class="main-grid">
-            <textarea id="inp-combos" placeholder="email:password"></textarea>
+            <div class="upload-section">
+                <div class="file-card">
+                    <label for="file-combos"><i class="fa-solid fa-file-import"></i> LOAD COMBOS</label>
+                    <input type="file" id="file-combos" accept=".txt" hidden>
+                    <p id="label-combos">No file selected</p>
+                </div>
+                <div class="file-card">
+                    <label for="file-proxies"><i class="fa-solid fa-network-wired"></i> LOAD PROXIES</label>
+                    <input type="file" id="file-proxies" accept=".txt" hidden>
+                    <p id="label-proxies">Direct Connection</p>
+                </div>
+                <button id="start-btn" class="btn-primary" style="width:100%">START SESSION</button>
+                <button id="stop-btn" class="btn-danger" style="width:100%; margin-top:10px" disabled>STOP</button>
+            </div>
+
             <div class="table-area">
-                <table>
-                    <thead><tr><th>EMAIL</th><th>STATUS</th><th>PREVIEW</th><th>VIEW</th></tr></thead>
-                    <tbody id="res-table"></tbody>
-                </table>
+                <div class="scroll-table">
+                    <table>
+                        <thead><tr><th>EMAIL</th><th>STATUS</th><th>DATA</th><th>VIEW</th></tr></thead>
+                        <tbody id="res-table"></tbody>
+                    </table>
+                </div>
             </div>
         </div>
     </div>
 
     <div id="emailModal" class="modal">
         <div class="modal-content">
-            <div class="modal-header">
-                <h3><i class="fa-solid fa-envelope-open"></i> Mail Preview</h3>
-                <span class="close" onclick="closeModal()">&times;</span>
-            </div>
+            <div class="modal-header"><h3>Email Content</h3><span class="close" onclick="closeModal()">&times;</span></div>
             <div class="modal-body"><pre id="mail-body"></pre></div>
         </div>
     </div>
-
     <script src="app.js"></script>
 </body>
 </html>
