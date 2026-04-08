@@ -2,73 +2,141 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>VALOSYNC TURBO | High-Speed Searcher</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VALOSYNC TURBO | Professional Mail Searcher</title>
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
     <div class="sidebar">
-        <div class="logo"><i class="fa-solid fa-bolt-lightning"></i> VALO<span>SYNC</span></div>
+        <div class="logo">
+            <i class="fa-solid fa-bolt-lightning"></i> VALO<span>SYNC</span>
+        </div>
         <nav>
-            <div class="nav-item active"><i class="fa-solid fa-gauge-high"></i> Turbo Checker</div>
-            <div class="nav-item" id="btn-export"><i class="fa-solid fa-file-export"></i> Export Hits</div>
+            <div class="nav-item active">
+                <i class="fa-solid fa-gauge-high"></i> Dashboard Turbo
+            </div>
+            <div class="nav-item" id="export-hits" style="cursor: pointer;">
+                <i class="fa-solid fa-file-export"></i> Export All Hits
+            </div>
+            <div class="nav-item">
+                <i class="fa-solid fa-shield-halved"></i> Proxy Manager
+            </div>
         </nav>
-        <div class="sidebar-footer"><p>v2.0.0 Turbo</p></div>
+        <div class="sidebar-footer">
+            <p>Enterprise Version 2.1</p>
+            <p id="system-status"><span class="status-dot"></span> System Ready</p>
+        </div>
     </div>
 
     <div class="container">
         <header>
             <div class="header-info">
-                <span id="cpm-display">CPM: 0</span>
-                <span id="thread-display">Threads Active: 0</span>
+                <span id="cpm-display"><i class="fa-solid fa-microchip"></i> CPM: 0</span>
+                <span id="time-display"><i class="fa-solid fa-clock"></i> 00:00:00</span>
             </div>
-            <div class="user-status"><span class="status-dot"></span> Multi-Thread Engine</div>
+            <div class="header-title">
+                REAL-TIME MONITORING
+            </div>
         </header>
 
         <div class="stats-grid">
-            <div class="stat-card"><h5>Checked</h5><p id="s-checked">0</p></div>
-            <div class="stat-card hit"><h5>Riot Hits</h5><p id="s-hit">0</p></div>
-            <div class="stat-card bad"><h5>Invalid</h5><p id="s-bad">0</p></div>
-            <div class="stat-card locked"><h5>Locked</h5><p id="s-locked">0</p></div>
+            <div class="stat-card">
+                <h5>Checked</h5>
+                <p id="s-checked">0</p>
+            </div>
+            <div class="stat-card hit">
+                <h5>Riot Hits</h5>
+                <p id="s-hit">0</p>
+            </div>
+            <div class="stat-card valid-only">
+                <h5>Valid (No Riot)</h5>
+                <p id="s-valid">0</p>
+            </div>
+            <div class="stat-card bad">
+                <h5>Invalid</h5>
+                <p id="s-bad">0</p>
+            </div>
+            <div class="stat-card locked">
+                <h5>Locked/AUP</h5>
+                <p id="s-locked">0</p>
+            </div>
         </div>
 
         <div class="main-grid">
             <div class="upload-section">
                 <div class="file-card">
-                    <label for="file-combos"><i class="fa-solid fa-file-import"></i> LOAD COMBOS</label>
+                    <label for="file-combos">
+                        <i class="fa-solid fa-cloud-arrow-up"></i> LOAD COMBOS (.txt)
+                    </label>
                     <input type="file" id="file-combos" accept=".txt" hidden>
-                    <p id="label-combos" class="file-info">No file selected</p>
+                    <p id="label-combos" class="file-info">Waiting for combo file...</p>
                 </div>
+                
                 <div class="file-card">
-                    <label for="file-proxies"><i class="fa-solid fa-network-wired"></i> LOAD PROXIES</label>
+                    <label for="file-proxies">
+                        <i class="fa-solid fa-server"></i> LOAD PROXIES (.txt)
+                    </label>
                     <input type="file" id="file-proxies" accept=".txt" hidden>
-                    <p id="label-proxies" class="file-info">Direct Connection</p>
+                    <p id="label-proxies" class="file-info">Direct Connection Mode</p>
                 </div>
 
                 <div class="thread-control">
-                    <label>THREADS: <span id="thread-val">50</span></label>
+                    <div class="thread-label">
+                        <span>THREADS SPEED</span>
+                        <span id="thread-val">50</span>
+                    </div>
                     <input type="range" id="thread-range" min="1" max="200" value="50">
+                    <p style="font-size: 10px; color: #666; margin-top: 5px;">*Higher threads require more proxy & RAM</p>
                 </div>
 
-                <button id="start-btn" class="btn-primary" style="width:100%">START SESSION</button>
-                <button id="stop-btn" class="btn-danger" style="width:100%; margin-top:10px" disabled>STOP</button>
+                <div class="action-btns">
+                    <button id="start-btn" class="btn-primary">
+                        <i class="fa-solid fa-play"></i> START CHECKING
+                    </button>
+                    <button id="stop-btn" class="btn-danger" disabled>
+                        <i class="fa-solid fa-stop"></i> STOP SESSION
+                    </button>
+                </div>
             </div>
 
             <div class="table-area">
-                <table>
-                    <thead><tr><th>EMAIL</th><th>STATUS</th><th>DATA</th><th>VIEW</th></tr></thead>
-                    <tbody id="res-table"></tbody>
-                </table>
+                <div class="table-header-info">
+                    <span>LIVE RESULTS (RIOT HITS ONLY)</span>
+                </div>
+                <div class="scroll-table">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>EMAIL ADDRESS</th>
+                                <th>STATUS</th>
+                                <th>DATA SCAN</th>
+                                <th>PREVIEW</th>
+                            </tr>
+                        </thead>
+                        <tbody id="res-table">
+                            </tbody>
+                    </table>
+                </div>
             </div>
         </div>
     </div>
 
     <div id="emailModal" class="modal">
         <div class="modal-content">
-            <div class="modal-header"><h3>Email Body Preview</h3><span class="close" onclick="closeModal()">&times;</span></div>
-            <div class="modal-body"><pre id="mail-body"></pre></div>
+            <div class="modal-header">
+                <h3><i class="fa-solid fa-envelope-open-text"></i> Email Body Content</h3>
+                <span class="close-modal" onclick="closeModal()">&times;</span>
+            </div>
+            <div class="modal-body">
+                <pre id="mail-body-content">Fetching email content...</pre>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-primary" onclick="closeModal()">Close Window</button>
+            </div>
         </div>
     </div>
+
     <script src="app.js"></script>
 </body>
 </html>
