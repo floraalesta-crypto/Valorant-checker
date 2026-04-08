@@ -3,63 +3,77 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Polygon AIO - Web Edition</title>
+    <title>Polygon AIO Web - Cloud Edition</title>
     <link rel="stylesheet" href="style.css">
+    <style>
+        /* Tambahan style cepat untuk layout lebar */
+        .dashboard-header {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        .card {
+            background: #161b22;
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid #30363d;
+            text-align: center;
+        }
+        .card h4 { color: #8b949e; margin: 0; font-size: 12px; text-transform: uppercase; }
+        .card p { font-size: 24px; font-weight: bold; margin: 5px 0 0 0; }
+        .card.hit p { color: #238636; }
+        .card.bad p { color: #da3633; }
+        
+        table { width: 100%; border-collapse: collapse; background: #0d1117; }
+        th { background: #161b22; color: #58a6ff; padding: 12px; text-align: left; font-size: 13px; }
+        td { padding: 10px; border-bottom: 1px solid #21262d; font-size: 13px; }
+        .badge-region { background: #1f6feb; padding: 2px 6px; border-radius: 4px; font-size: 11px; }
+    </style>
 </head>
 <body>
-    <div class="app-container">
-        <aside class="sidebar">
-            <h1 class="logo">POLYGON <span>AIO</span></h1>
-            <nav>
-                <ul>
-                    <li class="active">Valorant Checker</li>
-                    <li>Settings</li>
-                    <li>Proxies</li>
-                </ul>
-            </nav>
-        </aside>
-
-        <main class="content">
-            <div class="input-section">
-                <div class="input-box">
-                    <label>Combos (User:Pass)</label>
-                    <textarea id="combos-input" placeholder="ernesto:pass123&#10;johndoe:qwerty"></textarea>
-                </div>
-                <div class="input-box">
-                    <label>Proxies (user:pass@ip:port)</label>
-                    <textarea id="proxies-input" placeholder="http://user:pass@12.34.56.78:8080"></textarea>
-                </div>
-                <div class="action-box">
-                    <button id="start-btn" class="btn start">START CHECKER</button>
-                    <button id="stop-btn" class="btn stop" disabled>STOP</button>
-                </div>
-            </div>
-
-            <div class="stats-grid">
-                <div class="stat-card"><h2>CHECKED</h2><p id="stat-checked">0</p></div>
-                <div class="stat-card valid"><h2>VALID (HITS)</h2><p id="stat-valid">0</p></div>
-                <div class="stat-card invalid"><h2>INVALID</h2><p id="stat-invalid">0</p></div>
-                <div class="stat-card error"><h2>RETRIES/ERROR</h2><p id="stat-error">0</p></div>
-            </div>
-
-            <div class="table-container">
-                <h3>Live Hits Inventory</h3>
-                <table>
-                    <thead>
-                        <tr>
-                            <th>COMBO</th>
-                            <th>REGION</th>
-                            <th>LEVEL</th>
-                            <th>SKINS</th>
-                            <th>VP / RP</th>
-                        </tr>
-                    </thead>
-                    <tbody id="hits-table-body">
-                        </tbody>
-                </table>
-            </div>
-        </main>
+    <div class="sidebar">
+        <h2 style="color: #58a6ff;">POLYGON</h2>
+        <p style="font-size: 10px; opacity: 0.5;">VERSION 1.0.0 (WEB)</p>
+        <hr style="border: 0.5px solid #30363d; margin: 20px 0;">
+        <button onclick="location.reload()" class="btn-side">Dashboard</button>
     </div>
+
+    <div class="main-content">
+        <div class="dashboard-header">
+            <div class="card"><h4>Checked</h4><p id="stat-checked">0</p></div>
+            <div class="card hit"><h4>Valid / Hits</h4><p id="stat-valid">0</p></div>
+            <div class="card bad"><h4>Invalid</h4><p id="stat-invalid">0</p></div>
+            <div class="card"><h4>Retries</h4><p id="stat-error">0</p></div>
+        </div>
+
+        <div style="display: flex; gap: 20px; margin-bottom: 20px;">
+            <textarea id="combos-input" style="flex: 2; height: 150px;" placeholder="Paste Cookies / Tokens here..."></textarea>
+            <textarea id="proxies-input" style="flex: 1; height: 150px;" placeholder="Proxies (Optional)"></textarea>
+        </div>
+
+        <div style="margin-bottom: 20px;">
+            <button id="start-btn" class="btn start" style="width: 200px; padding: 12px;">START CHECKER</button>
+            <button id="stop-btn" class="btn stop" style="padding: 12px;" disabled>STOP</button>
+        </div>
+
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Account / Token</th>
+                        <th>Region</th>
+                        <th>Level</th>
+                        <th>Skins</th>
+                        <th>VP / RP</th>
+                    </tr>
+                </thead>
+                <tbody id="hits-table-body">
+                    </tbody>
+            </table>
+        </div>
+    </div>
+
     <script src="app.js"></script>
 </body>
 </html>
