@@ -1,7 +1,7 @@
 {
-  "name": "valo-checker-pro",
-  "version": "1.1.0",
-  "description": "Professional Valorant Account Manager",
+  "name": "polygon-clone-web",
+  "version": "1.0.0",
+  "description": "Web-based Valorant Checker",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"
